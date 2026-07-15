@@ -41,8 +41,8 @@ describe('每日推荐去重', () => {
       },
       repositoryScore: {
         findFirst: async () => scores[0],
-        findMany: async ({ where, take }: { where: { repositoryId?: { notIn: string[] } }; take: number }) => scores
-          .filter((score) => !where.repositoryId?.notIn.includes(score.repositoryId))
+        findMany: async ({ where, take }: { where: { repositoryId?: { notIn: string[] }; trendHeat: { gte: number } }; take: number }) => scores
+          .filter((score) => score.trendHeat >= where.trendHeat.gte && !where.repositoryId?.notIn.includes(score.repositoryId))
           .slice(0, take),
       },
       repository: {
@@ -57,6 +57,7 @@ describe('每日推荐去重', () => {
     const second = await service.getOrCreateDaily(new Date('2026-07-15T23:00:00+08:00'))
 
     expect(first.selectedCount).toBe(10)
+    expect(first.minimumHeat).toBe(40)
     expect(first.repositories).toHaveLength(10)
     expect(first.repositories.map((item) => item.fullName)).not.toContain('owner/repo-1')
     expect(first.repositories[0]?.fullName).toBe('owner/repo-2')

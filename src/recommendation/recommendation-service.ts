@@ -3,6 +3,7 @@ import { BizError } from '../lib/errors.js'
 import { newId } from '../lib/ids.js'
 
 const DAILY_RECOMMENDATION_COUNT = 10
+const MINIMUM_RECOMMENDATION_HEAT = 40
 const BEIJING_TIME_ZONE = 'Asia/Shanghai'
 
 type DbClient = PrismaClient | Prisma.TransactionClient
@@ -27,6 +28,7 @@ export class RecommendationService {
         const candidates = await tx.repositoryScore.findMany({
           where: {
             scoredAt: latestScore.scoredAt,
+            trendHeat: { gte: MINIMUM_RECOMMENDATION_HEAT },
             ...(recommended.length > 0
               ? { repositoryId: { notIn: recommended.map((item) => item.repositoryId) } }
               : {}),
@@ -91,6 +93,7 @@ export class RecommendationService {
       reportDate: formatDate(batch.reportDate),
       sourceScoredAt: batch.sourceScoredAt.toISOString(),
       requestedCount: batch.requestedCount,
+      minimumHeat: MINIMUM_RECOMMENDATION_HEAT,
       selectedCount: batch.selectedCount,
       exhausted: batch.selectedCount < batch.requestedCount,
       repositories: items.flatMap((item) => {

@@ -1,0 +1,84 @@
+name: CI and Deploy
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: github-trend-intelligence-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: 类型检查 + 单元测试 + 构建
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.24.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec prisma generate
+      - run: pnpm typecheck
+      - run: pnpm test
+      - run: pnpm build
+
+  deploy:
+    name: 部署到 ideaflow-tools
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - name: 加载部署密钥
+        uses: webfactory/ssh-agent@v0.9.1
+        with:
+          ssh-private-key: ${{ secrets.TOOLS_SERVER_SSH_KEY }}
+      - name: 信任目标服务器
+        env:
+          TOOLS_SERVER_HOST: ${{ secrets.TOOLS_SERVER_HOST }}
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H "$TOOLS_SERVER_HOST" >> ~/.ssh/known_hosts
+      - name: 同步代码
+        env:
+          TOOLS_SERVER_HOST: ${{ secrets.TOOLS_SERVER_HOST }}
+          TOOLS_SERVER_USER: ${{ secrets.TOOLS_SERVER_USER }}
+        run: |
+          rsync -az --delete \
+            --exclude '.git/' \
+            --exclude 'node_modules/' \
+            --exclude 'dist/' \
+            --exclude 'deploy/ideaflow-tools/.env' \
+            ./ "$TOOLS_SERVER_USER@$TOOLS_SERVER_HOST:/home/ubuntu/docker-services/github-trend-intelligence/"
+      - name: 构建并重启服务
+        env:
+          TOOLS_SERVER_HOST: ${{ secrets.TOOLS_SERVER_HOST }}
+          TOOLS_SERVER_USER: ${{ secrets.TOOLS_SERVER_USER }}
+        run: |
+          ssh "$TOOLS_SERVER_USER@$TOOLS_SERVER_HOST" '
+            set -eu
+            cd /home/ubuntu/docker-services/github-trend-intelligence/deploy/ideaflow-tools
+            docker compose build
+            docker compose up -d
+            for attempt in $(seq 1 18); do
+              state=$(docker inspect --format="{{.State.Health.Status}}" github-trend-intelligence 2>/dev/null || true)
+              if [ "$state" = healthy ]; then exit 0; fi
+              sleep 5
+            done
+            docker logs --tail 80 github-trend-intelligence
+            exit 1
+          '
+      - name: 公网健康检查
+        run: curl --fail --show-error --silent https://tools.ideaflow.pro/github-trend-intelligence/health

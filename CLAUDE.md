@@ -13,7 +13,7 @@ GitHub 趋势候选采集、时间序列评分与 CrewAI 证据服务。
 - 时间：全球 GitHub 事件统一存 UTC 绝对时刻，展示时再做时区转换。
 - 数据库：独立 PostgreSQL 18.1，不接公司共享表；全球 GitHub 事件使用 `timestamptz` 保存绝对时刻。
 - 部署：ideaflow-tools Docker 常驻服务，加入 `app-net`，容器内监听 3310；Caddy 保留 `/github-trend-intelligence` 前缀。
-- 调度：按 `TZ` + `COLLECT_DAILY_AT` 每日固定时刻采集，默认 Asia/Shanghai 09:00，启动不立即补跑。
+- 调度：ideaflow-tools 生产环境关闭内置自动采集；本地 Codex 每日 08:00 调用采集接口，成功后生成飞书日报。服务仍保留按 `TZ` + `COLLECT_DAILY_AT` 调度的可选能力，启动不立即补跑。
 - 鉴权：除健康检查外，所有 HTTP 路由与文档统一校验 `X-API-Token`。
 
 ## Git 提交规范（必读）

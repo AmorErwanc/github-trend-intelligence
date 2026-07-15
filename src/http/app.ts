@@ -11,6 +11,7 @@ import type { Runtime } from '../runtime.js'
 import { registerApiTokenAuth } from './api-token-auth.js'
 import {
   collectionDataSchema,
+  dailyRecommendationDataSchema,
   errorEnvelopeSchema,
   evidenceDataSchema,
   healthDataSchema,
@@ -137,6 +138,15 @@ export async function buildApp(runtime: Runtime): Promise<FastifyInstance> {
       response: { 200: successEnvelopeSchema(collectionDataSchema), ...protectedResponses },
     },
   }, async () => runtime.collection.collect('api'))
+
+  app.post(`${SERVICE_PREFIX}/recommendations/daily`, {
+    schema: {
+      tags: ['recommendation'],
+      summary: '获取当日固定 10 个未推荐仓库（同日幂等、跨日永久去重）',
+      security: apiTokenSecurity,
+      response: { 200: successEnvelopeSchema(dailyRecommendationDataSchema), ...protectedResponses },
+    },
+  }, async () => runtime.recommendations.getOrCreateDaily())
 
   return app
 }

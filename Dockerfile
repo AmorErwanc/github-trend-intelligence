@@ -1,4 +1,3 @@
-# syntax=docker/dockerfile:1.7
 FROM node:20-alpine AS base
 RUN apk add --no-cache openssl tzdata
 WORKDIR /app

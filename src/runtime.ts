@@ -7,6 +7,7 @@ import { GitHubClient } from './external/github-client.js'
 import { OSSInsightClient } from './external/ossinsight-client.js'
 import { TrendingClient } from './external/trending-client.js'
 import { logger } from './lib/logger.js'
+import { RecommendationService } from './recommendation/recommendation-service.js'
 
 export function createRuntime(config: Config) {
   const github = new GitHubClient(config.githubApiBase, config.githubToken)
@@ -20,7 +21,8 @@ export function createRuntime(config: Config) {
   })
   const store = new RepositoryStore(prisma)
   const collection = new CollectionService(prisma, discovery, github, store, config, logger)
-  return { config, prisma, github, discovery, store, collection, logger }
+  const recommendations = new RecommendationService(prisma)
+  return { config, prisma, github, discovery, store, collection, recommendations, logger }
 }
 
 export type Runtime = ReturnType<typeof createRuntime>

@@ -66,6 +66,43 @@ export const collectionDataSchema = {
   },
 } as const
 
+export const dailyRecommendationDataSchema = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['batchId', 'reportDate', 'sourceScoredAt', 'requestedCount', 'selectedCount', 'exhausted', 'repositories'],
+  properties: {
+    batchId: { type: 'string' },
+    reportDate: { type: 'string', format: 'date' },
+    sourceScoredAt: { type: 'string', format: 'date-time' },
+    requestedCount: { type: 'integer', enum: [10] },
+    selectedCount: { type: 'integer', minimum: 0, maximum: 10 },
+    exhausted: { type: 'boolean' },
+    repositories: {
+      type: 'array',
+      maxItems: 10,
+      items: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['position', 'fullName', 'htmlUrl', 'description', 'language', 'archetype', 'scoredAt', 'trendHeat', 'technicalSubstance', 'manipulationRisk', 'confidence', 'classification'],
+        properties: {
+          position: { type: 'integer', minimum: 1, maximum: 10 },
+          fullName: { type: 'string' },
+          htmlUrl: { type: 'string', format: 'uri' },
+          description: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+          language: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+          archetype: { type: 'string' },
+          scoredAt: { type: 'string', format: 'date-time' },
+          trendHeat: { type: 'number' },
+          technicalSubstance: { type: 'number' },
+          manipulationRisk: { type: 'number' },
+          confidence: { type: 'string' },
+          classification: { type: 'string' },
+        },
+      },
+    },
+  },
+} as const
+
 export const evidenceDataSchema = {
   type: 'object',
   additionalProperties: true,

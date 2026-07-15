@@ -8,7 +8,7 @@
 - 连续证据：保存仓库指标快照、榜单排名轨迹、README 版本和每次算法评分。
 - 三分制：趋势热度、技术含金量、异常风险独立输出；历史不足时不自动定性“刷星”。
 - 内部 API：除健康检查外统一使用 `X-API-Token` 鉴权，并返回统一响应结构。
-- 每日采集：默认按 `Asia/Shanghai` 每天 `09:00` 运行；启动进程不会立即补跑。
+- 每日推荐：本地 Codex 每天 08:00 触发采集，从最近一轮候选中选择 10 个从未推荐过的仓库；同日重跑保持幂等。
 - 云端部署：提供 ideaflow-tools Docker Compose，Caddy 转发时保留 `/github-trend-intelligence` 前缀。
 
 ## 本地启动
@@ -37,6 +37,10 @@ curl http://127.0.0.1:3310/github-trend-intelligence/health
 curl -X POST \
   -H 'X-API-Token: <API_TOKEN>' \
   http://127.0.0.1:3310/github-trend-intelligence/collect
+
+curl -X POST \
+  -H 'X-API-Token: <API_TOKEN>' \
+  http://127.0.0.1:3310/github-trend-intelligence/recommendations/daily
 
 curl -H 'X-API-Token: <API_TOKEN>' \
   'http://127.0.0.1:3310/github-trend-intelligence/repositories?limit=20&minHeat=50'
@@ -77,7 +81,7 @@ Swagger UI 位于 `/github-trend-intelligence/docs`，其页面和 OpenAPI JSON 
 
 ## 配置与密钥
 
-- `AUTO_COLLECT=true`：开启每日自动采集。
+- `AUTO_COLLECT=true`：可选地开启服务内置每日采集；生产环境为 `false`，由本地 Codex 统一调度。
 - `COLLECT_DAILY_AT=09:00`：目标时区内的每日固定时刻，格式为 `HH:mm`。
 - `TZ=Asia/Shanghai`：IANA 时区。
 - `DATABASE_URL`：PostgreSQL 连接串。

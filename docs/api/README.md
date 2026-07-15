@@ -67,6 +67,22 @@ curl -H 'X-API-Token: <API_TOKEN>' \
   'http://127.0.0.1:3310/github-trend-intelligence/repositories?limit=20&minHeat=50'
 ```
 
+### 每日去重推荐
+
+`POST /github-trend-intelligence/recommendations/daily`，无请求体。
+
+- 固定目标为 10 个仓库，不接受调用方覆盖数量。
+- 只从最近一轮采集的候选中按热度、技术含金量和风险排序。
+- 已进入任何历史推荐批次的仓库永久排除。
+- 同一北京时间自然日重复调用返回同一批，避免任务重跑造成重复推荐。
+- 当最近一轮采集剩余的未推荐仓库不足 10 个时，`exhausted=true`，不从陈旧历史库存补冷门项目。
+
+```bash
+curl -X POST \
+  -H 'X-API-Token: <API_TOKEN>' \
+  http://127.0.0.1:3310/github-trend-intelligence/recommendations/daily
+```
+
 ### 仓库证据包
 
 `GET /github-trend-intelligence/repositories/{owner}/{repo}/evidence`

@@ -25,6 +25,30 @@ async function createApp() {
     collection: {
       collect: async () => ({ runId: 'run_1', candidates: 1, enriched: 1, failed: 0, sourceStats: {}, top: [] }),
     },
+    recommendations: {
+      getOrCreateDaily: async () => ({
+        batchId: '01KX00000000000000000000',
+        reportDate: '2026-07-15',
+        sourceScoredAt: '2026-07-15T00:00:00.000Z',
+        requestedCount: 10,
+        selectedCount: 1,
+        exhausted: true,
+        repositories: [{
+          position: 1,
+          fullName: 'owner/repo',
+          htmlUrl: 'https://github.com/owner/repo',
+          description: 'demo',
+          language: 'TypeScript',
+          archetype: 'application',
+          scoredAt: '2026-07-15T00:00:00.000Z',
+          trendHeat: 80,
+          technicalSubstance: 70,
+          manipulationRisk: 10,
+          confidence: 'medium',
+          classification: 'sustained-trend',
+        }],
+      }),
+    },
     logger: pino({ level: 'silent' }),
   } as unknown as Runtime
   const app = await buildApp(runtime)
@@ -50,6 +74,7 @@ describe('HTTP API 鉴权与响应契约', () => {
     ['GET', '/github-trend-intelligence/repositories'],
     ['GET', '/github-trend-intelligence/repositories/openai/openai/evidence'],
     ['POST', '/github-trend-intelligence/collect'],
+    ['POST', '/github-trend-intelligence/recommendations/daily'],
     ['GET', '/github-trend-intelligence/docs/json'],
   ] as const)('%s %s 缺少 Token 时统一返回 401', async (method, url) => {
     const app = await createApp()
@@ -107,5 +132,26 @@ describe('HTTP API 鉴权与响应契约', () => {
     ]))
     expect(document.paths['/github-trend-intelligence/repositories'].get.responses['200'].content['application/json'].schema.properties)
       .toEqual(expect.objectContaining({ code: expect.any(Object), data: expect.any(Object), requestId: expect.any(Object), serverTime: expect.any(Object) }))
+    expect(document.paths['/github-trend-intelligence/recommendations/daily'].post.responses['200'])
+      .toBeDefined()
+  })
+
+  it('每日推荐接口固定返回最多 10 个仓库并公开耗尽状态', async () => {
+    const app = await createApp()
+    const response = await app.inject({
+      method: 'POST',
+      url: '/github-trend-intelligence/recommendations/daily',
+      headers: { 'x-api-token': API_TOKEN },
+    })
+    expect(response.statusCode).toBe(200)
+    expect(response.json()).toMatchObject({
+      code: 0,
+      data: {
+        requestedCount: 10,
+        selectedCount: 1,
+        exhausted: true,
+        repositories: [{ position: 1, fullName: 'owner/repo' }],
+      },
+    })
   })
 })

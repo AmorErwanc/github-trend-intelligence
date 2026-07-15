@@ -9,6 +9,7 @@ GitHub 趋势候选采集、时间序列评分和 CrewAI 证据服务。
 - [data-model.md](data-model.md) — 数据模型
 - [decisions.md](decisions.md) — 架构决策记录
 - [crewai-integration.md](crewai-integration.md) — CrewAI 接入契约
+- [feishu-card-spec.md](feishu-card-spec.md) — 每日 GitHub 趋势飞书卡片的内容与视觉规范
 - [api/README.md](api/README.md) — HTTP 接口
 - [deployment.md](deployment.md) — 本地 PostgreSQL 与 ideaflow-tools 部署
 - [commit-convention.md](commit-convention.md) — 提交规范

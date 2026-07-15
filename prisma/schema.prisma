@@ -31,24 +31,24 @@ model Repository {
 }
 
 model RepositorySnapshot {
-  id               String   @id(map: "gtr_snap_pk") @db.Char(24)
-  repositoryId     String   @map("repository_id") @db.Char(24)
-  capturedAt       DateTime @map("captured_at") @db.Timestamptz(3)
-  stars            Int
-  forks            Int
-  watchers         Int
-  subscribers      Int
-  openIssues       Int      @map("open_issues")
-  networkCount     Int      @map("network_count")
-  sizeKb           Int      @map("size_kb")
-  defaultBranch    String   @map("default_branch") @db.VarChar(128)
-  licenseSpdx      String?  @map("license_spdx") @db.VarChar(64)
-  topics           Json
-  hasIssues        Boolean  @map("has_issues")
-  hasDiscussions   Boolean  @map("has_discussions")
-  isFork           Boolean  @map("is_fork")
-  sourcePayload    Json?    @map("source_payload")
-  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  id             String   @id(map: "gtr_snap_pk") @db.Char(24)
+  repositoryId   String   @map("repository_id") @db.Char(24)
+  capturedAt     DateTime @map("captured_at") @db.Timestamptz(3)
+  stars          Int
+  forks          Int
+  watchers       Int
+  subscribers    Int
+  openIssues     Int      @map("open_issues")
+  networkCount   Int      @map("network_count")
+  sizeKb         Int      @map("size_kb")
+  defaultBranch  String   @map("default_branch") @db.VarChar(128)
+  licenseSpdx    String?  @map("license_spdx") @db.VarChar(64)
+  topics         Json
+  hasIssues      Boolean  @map("has_issues")
+  hasDiscussions Boolean  @map("has_discussions")
+  isFork         Boolean  @map("is_fork")
+  sourcePayload  Json?    @map("source_payload")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
 
   @@unique([repositoryId, capturedAt], map: "gtr_snap_repo_time_uq")
   @@index([repositoryId, capturedAt], map: "gtr_snap_repo_time_idx")
@@ -90,18 +90,18 @@ model RepositoryArtifact {
 }
 
 model RepositoryScore {
-  id                   String   @id(map: "gtr_score_pk") @db.Char(24)
-  repositoryId         String   @map("repository_id") @db.Char(24)
-  scoredAt             DateTime @map("scored_at") @db.Timestamptz(3)
-  trendHeat            Float    @map("trend_heat")
-  technicalSubstance   Float    @map("technical_substance")
-  manipulationRisk     Float    @map("manipulation_risk")
-  confidence           String   @db.VarChar(16)
-  classification       String   @db.VarChar(48)
-  features             Json
-  evidence             Json
-  algorithmVersion     String   @map("algorithm_version") @db.VarChar(32)
-  createdAt            DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  id                 String   @id(map: "gtr_score_pk") @db.Char(24)
+  repositoryId       String   @map("repository_id") @db.Char(24)
+  scoredAt           DateTime @map("scored_at") @db.Timestamptz(3)
+  trendHeat          Float    @map("trend_heat")
+  technicalSubstance Float    @map("technical_substance")
+  manipulationRisk   Float    @map("manipulation_risk")
+  confidence         String   @db.VarChar(16)
+  classification     String   @db.VarChar(48)
+  features           Json
+  evidence           Json
+  algorithmVersion   String   @map("algorithm_version") @db.VarChar(32)
+  createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
 
   @@unique([repositoryId, scoredAt, algorithmVersion], map: "gtr_score_repo_time_algo_uq")
   @@index([scoredAt, trendHeat], map: "gtr_score_time_heat_idx")
@@ -126,4 +126,34 @@ model CollectionRun {
 
   @@index([startedAt], map: "gtr_run_started_idx")
   @@map("github_trend_collection_run")
+}
+
+model RecommendationBatch {
+  id             String   @id(map: "gtr_rec_batch_pk") @db.Char(24)
+  reportDate     DateTime @unique(map: "gtr_rec_batch_date_uq") @map("report_date") @db.Date
+  sourceScoredAt DateTime @map("source_scored_at") @db.Timestamptz(3)
+  requestedCount Int      @default(10) @map("requested_count")
+  selectedCount  Int      @map("selected_count")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@index([createdAt], map: "gtr_rec_batch_created_idx")
+  @@map("github_trend_recommendation_batch")
+}
+
+model RecommendationItem {
+  id                 String   @id(map: "gtr_rec_item_pk") @db.Char(24)
+  batchId            String   @map("batch_id") @db.Char(24)
+  repositoryId       String   @unique(map: "gtr_rec_item_repo_uq") @map("repository_id") @db.Char(24)
+  position           Int
+  scoredAt           DateTime @map("scored_at") @db.Timestamptz(3)
+  trendHeat          Float    @map("trend_heat")
+  technicalSubstance Float    @map("technical_substance")
+  manipulationRisk   Float    @map("manipulation_risk")
+  confidence         String   @db.VarChar(16)
+  classification     String   @db.VarChar(48)
+  createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@unique([batchId, position], map: "gtr_rec_item_batch_pos_uq")
+  @@index([batchId], map: "gtr_rec_item_batch_idx")
+  @@map("github_trend_recommendation_item")
 }

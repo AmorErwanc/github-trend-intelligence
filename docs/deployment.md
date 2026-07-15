@@ -18,6 +18,7 @@ pnpm exec prisma migrate deploy
 - Caddy 必须原样转发 `/github-trend-intelligence/*`，不能剥离前缀。
 - 重启策略为 `unless-stopped`，健康检查访问匿名健康接口。
 - 容器启动不自动执行 migration；发布前由运维执行 `prisma migrate deploy`。
+- 生产环境关闭服务内置定时采集。唯一调度入口是本地 Codex：每天 08:00 先调用采集接口，完成后生成飞书日报，避免云端与本地重复采集。
 
 部署准备：
 
@@ -38,3 +39,9 @@ curl https://tools.ideaflow.pro/github-trend-intelligence/health
 curl -H 'X-API-Token: <API_TOKEN>' \
   'https://tools.ideaflow.pro/github-trend-intelligence/repositories?limit=1&minHeat=0'
 ```
+
+## GitHub 自动部署
+
+公开仓库 `AmorErwanc/github-trend-intelligence` 的 `main` 分支 push 后运行 `.github/workflows/ci-deploy.yml`：先完成类型检查、单元测试和构建，再通过 SSH/rsync 同步到 `/home/ubuntu/docker-services/github-trend-intelligence/`，保留服务器上的生产 `.env`，重建 Docker 容器并校验容器健康与公网健康接口。
+
+数据库 migration 不在 CI 中自动执行。包含新 migration 的版本在合入 `main` 前先由运维执行 `pnpm exec prisma migrate deploy`，避免自动发布持有生产 DDL 权限。

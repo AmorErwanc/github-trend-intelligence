@@ -70,7 +70,7 @@ jobs:
           ssh "$TOOLS_SERVER_USER@$TOOLS_SERVER_HOST" '
             set -eu
             cd /home/ubuntu/docker-services/github-trend-intelligence/deploy/ideaflow-tools
-            docker compose build
+            DOCKER_BUILDKIT=0 docker compose build
             docker compose up -d
             for attempt in $(seq 1 18); do
               state=$(docker inspect --format="{{.State.Health.Status}}" github-trend-intelligence 2>/dev/null || true)

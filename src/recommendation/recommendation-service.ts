@@ -3,7 +3,7 @@ import { BizError } from '../lib/errors.js'
 import { newId } from '../lib/ids.js'
 
 const DAILY_RECOMMENDATION_COUNT = 10
-const MINIMUM_RECOMMENDATION_HEAT = 40
+const MINIMUM_RECOMMENDATION_HEAT = 20
 const BEIJING_TIME_ZONE = 'Asia/Shanghai'
 
 type DbClient = PrismaClient | Prisma.TransactionClient

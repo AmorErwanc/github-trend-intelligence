@@ -57,7 +57,7 @@ describe('每日推荐去重', () => {
     const second = await service.getOrCreateDaily(new Date('2026-07-15T23:00:00+08:00'))
 
     expect(first.selectedCount).toBe(10)
-    expect(first.minimumHeat).toBe(40)
+    expect(first.minimumHeat).toBe(20)
     expect(first.repositories).toHaveLength(10)
     expect(first.repositories.map((item) => item.fullName)).not.toContain('owner/repo-1')
     expect(first.repositories[0]?.fullName).toBe('owner/repo-2')

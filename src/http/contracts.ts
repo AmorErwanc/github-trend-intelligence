@@ -75,7 +75,7 @@ export const dailyRecommendationDataSchema = {
     reportDate: { type: 'string', format: 'date' },
     sourceScoredAt: { type: 'string', format: 'date-time' },
     requestedCount: { type: 'integer', enum: [10] },
-    minimumHeat: { type: 'number', enum: [40] },
+    minimumHeat: { type: 'number', enum: [20] },
     selectedCount: { type: 'integer', minimum: 0, maximum: 10 },
     exhausted: { type: 'boolean' },
     repositories: {

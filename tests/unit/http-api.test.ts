@@ -31,7 +31,7 @@ async function createApp() {
         reportDate: '2026-07-15',
         sourceScoredAt: '2026-07-15T00:00:00.000Z',
         requestedCount: 10,
-        minimumHeat: 40,
+        minimumHeat: 20,
         selectedCount: 1,
         exhausted: true,
         repositories: [{
@@ -149,7 +149,7 @@ describe('HTTP API 鉴权与响应契约', () => {
       code: 0,
       data: {
         requestedCount: 10,
-        minimumHeat: 40,
+        minimumHeat: 20,
         selectedCount: 1,
         exhausted: true,
         repositories: [{ position: 1, fullName: 'owner/repo' }],

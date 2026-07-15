@@ -1,0 +1,8 @@
+name: Deploy
+on:
+  workflow_dispatch:
+jobs:
+  deployment-target-not-bound:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "云端目标尚未绑定；本工作流只占位，禁止自动发布。"

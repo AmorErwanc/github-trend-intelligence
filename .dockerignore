@@ -1,0 +1,17 @@
+.git
+.github
+.claude
+.codex
+.wff
+node_modules
+dist
+coverage
+tmp
+tests
+docs/_archive
+.env
+.env.*
+!.env.example
+*.local.*
+*.log
+.DS_Store

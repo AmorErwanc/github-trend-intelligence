@@ -1,0 +1,21 @@
+services:
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: github_trend
+      MYSQL_USER: github_trend
+      MYSQL_PASSWORD: github_trend
+      MYSQL_ROOT_PASSWORD: local-root-only
+      TZ: Asia/Shanghai
+    ports:
+      - "33306:3306"
+    volumes:
+      - github-trend-mysql:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-plocal-root-only"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  github-trend-mysql:

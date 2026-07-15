@@ -6,11 +6,21 @@
 
 ## 服务信息
 
-- 服务标识：`github-trend-intelligence`
-- 路由前缀：`/github-trend-intelligence/`
-- 默认端口：`3310`
-- 开发数据库：Docker MySQL 8.4，宿主机端口 `33306`
-- 生产形态：推荐云端常驻；部署机器和域名尚未绑定
+- 服务标识与生产容器名：`github-trend-intelligence`
+- 路由前缀：`/github-trend-intelligence/`，Caddy 转发时保留该前缀
+- 容器监听：`0.0.0.0:3310`
+- 数据库：PostgreSQL 18.1；本地开发容器为 `github-trend-intelligence-postgres`，宿主机端口 `35432`
+- 生产形态：ideaflow-tools Docker 服务，加入 external network `app-net`
+
+## 环境变量
+
+- 基础：`NODE_ENV`、`DEPLOY_ENV`、`TZ`、`PORT`、`HOST`、`SERVICE_NAME`、`LOG_LEVEL`
+- 数据源：`GITHUB_TOKEN`、`GITHUB_API_BASE`、`GITHUB_WEB_BASE`、`OSSINSIGHT_API_BASE`
+- 采集：`MAX_CANDIDATES`、`ENRICH_CONCURRENCY`、`SEARCH_LOOKBACK_DAYS`、`TRENDING_WINDOWS`、`OSSINSIGHT_ENABLED`
+- 调度：`AUTO_COLLECT`、`COLLECT_DAILY_AT`；默认 `false`、`09:00`，时区由 `TZ` 决定
+- 存储与鉴权：`DATABASE_URL`、`API_TOKEN`
+
+`API_TOKEN` 至少 16 字符。生产的 `GITHUB_TOKEN`、`API_TOKEN`、`DATABASE_URL` 只放服务器 `.env`，不进入 Git 或镜像。
 
 ## 外部依赖
 

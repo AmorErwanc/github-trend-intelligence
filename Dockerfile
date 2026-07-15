@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.7
 FROM node:20-alpine AS base
-RUN apk add --no-cache openssl
+RUN apk add --no-cache openssl tzdata
 WORKDIR /app
 ENV TZ=Asia/Shanghai
 ENV PRISMA_ENGINES_MIRROR=https://registry.npmmirror.com/-/binary/prisma
@@ -19,13 +19,17 @@ COPY prisma ./prisma
 COPY src ./src
 RUN pnpm exec prisma generate && pnpm build
 
+FROM builder AS production-dependencies
+RUN pnpm prune --prod --ignore-scripts
+
 FROM base AS runner
 ENV NODE_ENV=production
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/package.json ./
-COPY --from=builder /app/prisma ./prisma
-COPY docker-entrypoint.sh ./
+COPY --chown=node:node --from=production-dependencies /app/node_modules ./node_modules
+COPY --chown=node:node --from=builder /app/dist ./dist
+COPY --chown=node:node --from=builder /app/package.json ./
+COPY --chown=node:node --from=builder /app/prisma ./prisma
+COPY --chown=node:node docker-entrypoint.sh ./
+USER node
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
   CMD node -e "fetch('http://127.0.0.1:'+(process.env.PORT||3310)+'/github-trend-intelligence/health').then(r=>r.ok?process.exit(0):process.exit(1)).catch(()=>process.exit(1))"
 ENTRYPOINT ["sh", "/app/docker-entrypoint.sh"]

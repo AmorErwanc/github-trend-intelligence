@@ -3,14 +3,13 @@ generator client {
 }
 
 datasource db {
-  provider     = "mysql"
-  url          = env("DATABASE_URL")
-  relationMode = "prisma"
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model Repository {
-  id              String   @id @db.Char(24)
-  githubRepoId    BigInt   @unique(map: "gtr_repo_github_id_uq") @map("github_repo_id") @db.UnsignedBigInt
+  id              String   @id(map: "gtr_repo_pk") @db.Char(24)
+  githubRepoId    BigInt   @unique(map: "gtr_repo_github_uq") @map("github_repo_id") @db.BigInt
   fullName        String   @unique(map: "gtr_repo_full_name_uq") @map("full_name") @db.VarChar(255)
   owner           String   @db.VarChar(128)
   name            String   @db.VarChar(128)
@@ -18,13 +17,13 @@ model Repository {
   description     String?  @db.Text
   primaryLanguage String?  @map("primary_language") @db.VarChar(64)
   archetype       String   @default("unknown") @db.VarChar(32)
-  createdAtGithub DateTime @map("created_at_github") @db.DateTime(3)
-  pushedAtGithub  DateTime @map("pushed_at_github") @db.DateTime(3)
+  createdAtGithub DateTime @map("created_at_github") @db.Timestamptz(3)
+  pushedAtGithub  DateTime @map("pushed_at_github") @db.Timestamptz(3)
   archived        Boolean  @default(false)
-  firstSeenAt     DateTime @map("first_seen_at") @db.DateTime(3)
-  lastSeenAt      DateTime @map("last_seen_at") @db.DateTime(3)
-  createdAt       DateTime @default(now()) @map("created_at") @db.DateTime(3)
-  updatedAt       DateTime @updatedAt @map("updated_at") @db.DateTime(3)
+  firstSeenAt     DateTime @map("first_seen_at") @db.Timestamptz(3)
+  lastSeenAt      DateTime @map("last_seen_at") @db.Timestamptz(3)
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   @@index([lastSeenAt], map: "gtr_repo_last_seen_idx")
   @@index([primaryLanguage, lastSeenAt], map: "gtr_repo_lang_seen_idx")
@@ -32,9 +31,9 @@ model Repository {
 }
 
 model RepositorySnapshot {
-  id               String   @id @db.Char(24)
+  id               String   @id(map: "gtr_snap_pk") @db.Char(24)
   repositoryId     String   @map("repository_id") @db.Char(24)
-  capturedAt       DateTime @map("captured_at") @db.DateTime(3)
+  capturedAt       DateTime @map("captured_at") @db.Timestamptz(3)
   stars            Int
   forks            Int
   watchers         Int
@@ -49,7 +48,7 @@ model RepositorySnapshot {
   hasDiscussions   Boolean  @map("has_discussions")
   isFork           Boolean  @map("is_fork")
   sourcePayload    Json?    @map("source_payload")
-  createdAt        DateTime @default(now()) @map("created_at") @db.DateTime(3)
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
 
   @@unique([repositoryId, capturedAt], map: "gtr_snap_repo_time_uq")
   @@index([repositoryId, capturedAt], map: "gtr_snap_repo_time_idx")
@@ -58,16 +57,16 @@ model RepositorySnapshot {
 }
 
 model RankingSnapshot {
-  id            String   @id @db.Char(24)
+  id            String   @id(map: "gtr_rank_pk") @db.Char(24)
   repositoryId  String   @map("repository_id") @db.Char(24)
-  capturedAt    DateTime @map("captured_at") @db.DateTime(3)
+  capturedAt    DateTime @map("captured_at") @db.Timestamptz(3)
   source        String   @db.VarChar(32)
   window        String   @db.VarChar(32)
   rank          Int
   periodStars   Int?     @map("period_stars")
   sourceScore   Float?   @map("source_score")
   sourcePayload Json?    @map("source_payload")
-  createdAt     DateTime @default(now()) @map("created_at") @db.DateTime(3)
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
 
   @@unique([repositoryId, capturedAt, source, window], map: "gtr_rank_repo_time_src_win_uq")
   @@index([source, window, capturedAt, rank], map: "gtr_rank_src_win_time_idx")
@@ -76,14 +75,14 @@ model RankingSnapshot {
 }
 
 model RepositoryArtifact {
-  id           String   @id @db.Char(24)
+  id           String   @id(map: "gtr_artifact_pk") @db.Char(24)
   repositoryId String   @map("repository_id") @db.Char(24)
   kind         String   @db.VarChar(32)
   ref          String?  @db.VarChar(128)
-  content      String   @db.LongText
+  content      String   @db.Text
   contentHash  String   @map("content_hash") @db.Char(64)
-  fetchedAt    DateTime @map("fetched_at") @db.DateTime(3)
-  createdAt    DateTime @default(now()) @map("created_at") @db.DateTime(3)
+  fetchedAt    DateTime @map("fetched_at") @db.Timestamptz(3)
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
 
   @@unique([repositoryId, kind, contentHash], map: "gtr_artifact_repo_kind_hash_uq")
   @@index([repositoryId, kind, fetchedAt], map: "gtr_artifact_repo_kind_time_idx")
@@ -91,9 +90,9 @@ model RepositoryArtifact {
 }
 
 model RepositoryScore {
-  id                   String   @id @db.Char(24)
+  id                   String   @id(map: "gtr_score_pk") @db.Char(24)
   repositoryId         String   @map("repository_id") @db.Char(24)
-  scoredAt             DateTime @map("scored_at") @db.DateTime(3)
+  scoredAt             DateTime @map("scored_at") @db.Timestamptz(3)
   trendHeat            Float    @map("trend_heat")
   technicalSubstance   Float    @map("technical_substance")
   manipulationRisk     Float    @map("manipulation_risk")
@@ -102,7 +101,7 @@ model RepositoryScore {
   features             Json
   evidence             Json
   algorithmVersion     String   @map("algorithm_version") @db.VarChar(32)
-  createdAt            DateTime @default(now()) @map("created_at") @db.DateTime(3)
+  createdAt            DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
 
   @@unique([repositoryId, scoredAt, algorithmVersion], map: "gtr_score_repo_time_algo_uq")
   @@index([scoredAt, trendHeat], map: "gtr_score_time_heat_idx")
@@ -112,18 +111,18 @@ model RepositoryScore {
 }
 
 model CollectionRun {
-  id             String    @id @db.Char(24)
+  id             String    @id(map: "gtr_run_pk") @db.Char(24)
   status         String    @db.VarChar(24)
   trigger        String    @db.VarChar(24)
-  startedAt      DateTime  @map("started_at") @db.DateTime(3)
-  finishedAt     DateTime? @map("finished_at") @db.DateTime(3)
+  startedAt      DateTime  @map("started_at") @db.Timestamptz(3)
+  finishedAt     DateTime? @map("finished_at") @db.Timestamptz(3)
   candidateCount Int       @default(0) @map("candidate_count")
   enrichedCount  Int       @default(0) @map("enriched_count")
   failedCount    Int       @default(0) @map("failed_count")
   sourceStats    Json?     @map("source_stats")
   errorMessage   String?   @map("error_message") @db.Text
-  createdAt      DateTime  @default(now()) @map("created_at") @db.DateTime(3)
-  updatedAt      DateTime  @updatedAt @map("updated_at") @db.DateTime(3)
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt      DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   @@index([startedAt], map: "gtr_run_started_idx")
   @@map("github_trend_collection_run")

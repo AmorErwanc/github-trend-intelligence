@@ -11,8 +11,10 @@ GitHub 趋势候选采集、时间序列评分与 CrewAI 证据服务。
 - 代码路径：用户指定在 `~/program/github-trend-intelligence`，不在 `~/backend/`。
 - 主键：内部记录使用 24 位 ULID；GitHub `repo.id` 是跨来源稳定业务键。
 - 时间：全球 GitHub 事件统一存 UTC 绝对时刻，展示时再做时区转换。
-- 数据库：独立 `github_trend` MySQL，不接公司共享表。
-- 部署：开发态已跑通；生产推荐云端常驻，但目标尚未绑定，Deploy workflow 禁止自动发布。
+- 数据库：独立 PostgreSQL 18.1，不接公司共享表；全球 GitHub 事件使用 `timestamptz` 保存绝对时刻。
+- 部署：ideaflow-tools Docker 常驻服务，加入 `app-net`，容器内监听 3310；Caddy 保留 `/github-trend-intelligence` 前缀。
+- 调度：按 `TZ` + `COLLECT_DAILY_AT` 每日固定时刻采集，默认 Asia/Shanghai 09:00，启动不立即补跑。
+- 鉴权：除健康检查外，所有 HTTP 路由与文档统一校验 `X-API-Token`。
 
 ## Git 提交规范（必读）
 

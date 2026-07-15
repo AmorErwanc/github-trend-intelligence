@@ -1,38 +1,87 @@
 # GitHub Trend Intelligence
 
-持续抓取 GitHub 热门候选，保存时间序列证据，区分“热度、技术含金量、异常风险”，并输出可直接交给 CrewAI 的结构化证据包。
+持续抓取 GitHub 热门候选，使用 PostgreSQL 保存时间序列证据，区分“热度、技术含金量、异常风险”，并通过稳定的内部 HTTP API 输出可直接交给 CrewAI 的结构化证据包。
 
-## 第一版能力
+## 主要能力
 
 - 多入口候选发现：GitHub Trending、GitHub Repository Search、OSSInsight 24h/28d 趋势。
-- 低门槛运行：三个入口都可以免费调用；`GITHUB_TOKEN` 可选，只用于提高 GitHub API 限额。
 - 连续证据：保存仓库指标快照、榜单排名轨迹、README 版本和每次算法评分。
-- 三分制：`trendHeat`、`technicalSubstance`、`manipulationRisk` 独立输出。
-- 风险不定罪：历史不足时只给低置信度异常提示，禁止自动输出“刷星”结论。
-- CrewAI 契约：证据接口返回 README、指标、历史、榜单来源和推理边界。
+- 三分制：趋势热度、技术含金量、异常风险独立输出；历史不足时不自动定性“刷星”。
+- 内部 API：除健康检查外统一使用 `X-API-Token` 鉴权，并返回统一响应结构。
+- 每日采集：默认按 `Asia/Shanghai` 每天 `09:00` 运行；启动进程不会立即补跑。
+- 云端部署：提供 ideaflow-tools Docker Compose，Caddy 转发时保留 `/github-trend-intelligence` 前缀。
 
 ## 本地启动
 
 ```bash
 cp .env.example .env
-pnpm install
+# 编辑 .env，至少把 API_TOKEN 替换成 16 字符以上的随机值
+pnpm install --frozen-lockfile
 docker compose -f deploy/docker-compose.yml up -d
 pnpm exec prisma migrate deploy
-pnpm discover
-pnpm collect
 pnpm dev
 ```
 
-不启动数据库也可以先运行 `pnpm discover`，验证候选发现链路。
+CLI 手工采集仍可使用：
 
-## 主要接口
+```bash
+pnpm discover
+pnpm collect
+```
 
-- `GET /github-trend-intelligence/health`
-- `POST /github-trend-intelligence/collect`
-- `GET /github-trend-intelligence/repositories?limit=20&minHeat=50`
-- `GET /github-trend-intelligence/repositories/{owner}/{repo}/evidence`
-- Swagger：`/github-trend-intelligence/docs`
+## HTTP API
 
-生产常驻时设置 `AUTO_COLLECT=true`，默认每 60 分钟采集一次。未配置 GitHub Token 时，一次最多补全 20 个仓库，避免超过匿名 REST 限额。
+```bash
+curl http://127.0.0.1:3310/github-trend-intelligence/health
 
-项目文档入口见 [docs/README.md](docs/README.md)。
+curl -X POST \
+  -H 'X-API-Token: <API_TOKEN>' \
+  http://127.0.0.1:3310/github-trend-intelligence/collect
+
+curl -H 'X-API-Token: <API_TOKEN>' \
+  'http://127.0.0.1:3310/github-trend-intelligence/repositories?limit=20&minHeat=50'
+
+curl -H 'X-API-Token: <API_TOKEN>' \
+  http://127.0.0.1:3310/github-trend-intelligence/repositories/openai/openai/evidence
+
+curl -H 'X-API-Token: <API_TOKEN>' \
+  http://127.0.0.1:3310/github-trend-intelligence/docs/json
+```
+
+成功响应样例：
+
+```json
+{
+  "code": 0,
+  "message": "ok",
+  "data": [],
+  "requestId": "req_01K...",
+  "serverTime": 1784112000000
+}
+```
+
+错误响应样例：
+
+```json
+{
+  "code": 4011,
+  "message": "API Token 缺失或无效",
+  "details": { "errorCode": "UNAUTHORIZED" },
+  "retryable": false,
+  "requestId": "req_01K...",
+  "serverTime": 1784112000000
+}
+```
+
+Swagger UI 位于 `/github-trend-intelligence/docs`，其页面和 OpenAPI JSON 同样要求 `X-API-Token`。完整契约见 [docs/api/README.md](docs/api/README.md)。
+
+## 配置与密钥
+
+- `AUTO_COLLECT=true`：开启每日自动采集。
+- `COLLECT_DAILY_AT=09:00`：目标时区内的每日固定时刻，格式为 `HH:mm`。
+- `TZ=Asia/Shanghai`：IANA 时区。
+- `DATABASE_URL`：PostgreSQL 连接串。
+- `API_TOKEN`：内部 HTTP API Token，至少 16 字符。
+- `GITHUB_TOKEN`：可选的 GitHub 只读 Token；不配置时一次最多补全 20 个仓库以控制匿名限额。
+
+生产的 `GITHUB_TOKEN`、`API_TOKEN`、`DATABASE_URL` 只允许写入服务器 `deploy/ideaflow-tools/.env`，不得写入 Git、Dockerfile、Compose 文件或镜像。部署说明见 [docs/deployment.md](docs/deployment.md)，其余项目文档入口见 [docs/README.md](docs/README.md)。

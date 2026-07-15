@@ -4,6 +4,8 @@ CrewAI 只消费证据，不参与候选抓取和结构化评分。
 
 请求：`GET /github-trend-intelligence/repositories/{owner}/{repo}/evidence`
 
+请求必须携带 `X-API-Token: <API_TOKEN>`；返回内容位于统一成功响应的 `data` 字段中。
+
 - `repository`：当前仓库事实。
 - `discovery`：召回入口、榜单窗口和排名。
 - `scores`：三类分数、置信度、特征与正反证据。

@@ -19,7 +19,7 @@ export function buildLoggerOptions(serviceName: string, env: NodeJS.ProcessEnv =
     level: nonEmpty(env.LOG_LEVEL) ?? 'info',
     timestamp: pino.stdTimeFunctions.isoTime,
     redact: {
-      paths: ['req.headers.authorization', '*.token', '*.password', '*.apiKey'],
+      paths: ['req.headers.authorization', 'req.headers.x-api-token', '*.token', '*.password', '*.apiKey'],
       censor: '[REDACTED]',
     },
   }

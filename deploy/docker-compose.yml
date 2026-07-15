@@ -1,21 +1,21 @@
 services:
-  mysql:
-    image: mysql:8.4
+  github-trend-intelligence-postgres:
+    image: postgres:18.1
+    container_name: github-trend-intelligence-postgres
     environment:
-      MYSQL_DATABASE: github_trend
-      MYSQL_USER: github_trend
-      MYSQL_PASSWORD: github_trend
-      MYSQL_ROOT_PASSWORD: local-root-only
+      POSTGRES_DB: github_trend
+      POSTGRES_USER: github_trend
+      POSTGRES_PASSWORD: github_trend_local_only
       TZ: Asia/Shanghai
     ports:
-      - "33306:3306"
+      - "35432:5432"
     volumes:
-      - github-trend-mysql:/var/lib/mysql
+      - github-trend-intelligence-postgres-data:/var/lib/postgresql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-plocal-root-only"]
+      test: ["CMD-SHELL", "pg_isready -U github_trend -d github_trend"]
       interval: 5s
       timeout: 3s
       retries: 20
 
 volumes:
-  github-trend-mysql:
+  github-trend-intelligence-postgres-data:

@@ -1,4 +1,5 @@
 export const ApiErrorCode = {
+  UNAUTHORIZED: 4011,
   PARAM_INVALID: 4002,
   RESOURCE_NOT_FOUND: 4041,
   STATE_CONFLICT: 4091,
@@ -9,6 +10,7 @@ export const ApiErrorCode = {
 
 export type PublicErrorCode =
   | 'BAD_REQUEST'
+  | 'UNAUTHORIZED'
   | 'RESOURCE_NOT_FOUND'
   | 'COLLECTION_RUNNING'
   | 'RATE_LIMITED'
@@ -17,6 +19,7 @@ export type PublicErrorCode =
 
 const meta = {
   BAD_REQUEST: { apiCode: ApiErrorCode.PARAM_INVALID, httpStatus: 400, retryable: false },
+  UNAUTHORIZED: { apiCode: ApiErrorCode.UNAUTHORIZED, httpStatus: 401, retryable: false },
   RESOURCE_NOT_FOUND: { apiCode: ApiErrorCode.RESOURCE_NOT_FOUND, httpStatus: 404, retryable: false },
   COLLECTION_RUNNING: { apiCode: ApiErrorCode.STATE_CONFLICT, httpStatus: 409, retryable: false },
   RATE_LIMITED: { apiCode: ApiErrorCode.RATE_LIMITED, httpStatus: 429, retryable: true },

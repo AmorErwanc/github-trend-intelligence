@@ -10,6 +10,7 @@ GitHub 趋势候选采集、时间序列评分和 CrewAI 证据服务。
 - [decisions.md](decisions.md) — 架构决策记录
 - [crewai-integration.md](crewai-integration.md) — CrewAI 接入契约
 - [api/README.md](api/README.md) — HTTP 接口
+- [deployment.md](deployment.md) — 本地 PostgreSQL 与 ideaflow-tools 部署
 - [commit-convention.md](commit-convention.md) — 提交规范
 
 ## docs 同步矩阵
@@ -19,3 +20,4 @@ GitHub 趋势候选采集、时间序列评分和 CrewAI 证据服务。
 - HTTP 路由变化 → `docs/api/README.md`
 - CrewAI 证据结构变化 → `docs/crewai-integration.md`
 - 环境变量变化 → `.env.example` + `docs/project-info.md`
+- 部署方式变化 → `docs/deployment.md` + `deploy/ideaflow-tools/`

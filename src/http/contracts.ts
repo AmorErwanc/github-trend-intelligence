@@ -1,3 +1,5 @@
+const nullable = <T extends object>(schema: T) => ({ anyOf: [schema, { type: 'null' }] }) as const
+
 export const errorEnvelopeSchema = {
   type: 'object',
   additionalProperties: false,
@@ -98,6 +100,36 @@ export const dailyRecommendationDataSchema = {
           manipulationRisk: { type: 'number' },
           confidence: { type: 'string' },
           classification: { type: 'string' },
+          createdAt: nullable({ type: 'string', format: 'date-time' }),
+          pushedAt: nullable({ type: 'string', format: 'date-time' }),
+          facts: {
+            type: 'object',
+            additionalProperties: false,
+            properties: {
+              stars: nullable({ type: 'integer' }), forks: nullable({ type: 'integer' }),
+              openIssues: nullable({ type: 'integer' }), subscribers: nullable({ type: 'integer' }),
+              license: nullable({ type: 'string' }), topics: { type: 'array', items: { type: 'string' } },
+              ageDays: nullable({ type: 'number' }), pushedDaysAgo: nullable({ type: 'number' }),
+            },
+          },
+          growth: {
+            type: 'object',
+            additionalProperties: false,
+            properties: { stars24h: nullable({ type: 'number' }), stars7d: nullable({ type: 'number' }), forkRate: nullable({ type: 'number' }) },
+          },
+          ranking: {
+            type: 'object',
+            additionalProperties: false,
+            properties: { bestRank: nullable({ type: 'number' }), sources: { type: 'array', items: { type: 'string' } } },
+          },
+          history: {
+            type: 'array',
+            items: {
+              type: 'object',
+              additionalProperties: false,
+              properties: { date: { type: 'string', format: 'date' }, stars: { type: 'integer' }, forks: { type: 'integer' } },
+            },
+          },
         },
       },
     },

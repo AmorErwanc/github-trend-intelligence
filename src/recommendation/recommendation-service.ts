@@ -87,6 +87,7 @@ export class RecommendationService {
       where: { id: { in: items.map((item) => item.repositoryId) } },
     })
     const repositoriesById = new Map(repositories.map((repository) => [repository.id, repository]))
+    const details = await this.loadDetails(db, items.map((item) => item.repositoryId), batch.sourceScoredAt)
 
     return {
       batchId: batch.id,
@@ -112,10 +113,95 @@ export class RecommendationService {
           manipulationRisk: item.manipulationRisk,
           confidence: item.confidence,
           classification: item.classification,
+          createdAt: repository.createdAtGithub?.toISOString() ?? null,
+          pushedAt: repository.pushedAtGithub?.toISOString() ?? null,
+          ...(details.get(item.repositoryId) ?? EMPTY_DETAIL),
         }]
       }),
     }
   }
+
+  /**
+   * 写日报要用、但仓库里查不到的信息：采集当时的仓库数据、增长、榜单表现和近期走势。
+   * 全部取评分时刻及之前的数据，同一批次重复调用结果不变。三次批量查询，不按仓库逐个查。
+   */
+  private async loadDetails(db: DbClient, repositoryIds: string[], scoredAt: Date): Promise<Map<string, RecommendationDetail>> {
+    const result = new Map<string, RecommendationDetail>()
+    if (repositoryIds.length === 0) return result
+    const historyFrom = new Date(scoredAt.getTime() - HISTORY_DAYS * 86_400_000)
+    const [scores, snapshots, rankings] = await Promise.all([
+      db.repositoryScore.findMany({
+        where: { repositoryId: { in: repositoryIds }, scoredAt },
+        select: { repositoryId: true, features: true },
+      }),
+      db.repositorySnapshot.findMany({
+        where: { repositoryId: { in: repositoryIds }, capturedAt: { gte: historyFrom, lte: scoredAt } },
+        orderBy: { capturedAt: 'desc' },
+        select: { repositoryId: true, capturedAt: true, stars: true, forks: true, openIssues: true, subscribers: true, licenseSpdx: true, topics: true },
+      }),
+      db.rankingSnapshot.findMany({
+        where: { repositoryId: { in: repositoryIds }, capturedAt: { lte: scoredAt } },
+        distinct: ['repositoryId', 'source'],
+        select: { repositoryId: true, source: true },
+      }),
+    ])
+
+    for (const repositoryId of repositoryIds) {
+      const features = asRecord(scores.find((score) => score.repositoryId === repositoryId)?.features)
+      const own = snapshots.filter((snapshot) => snapshot.repositoryId === repositoryId)
+      const latest = own[0]
+      result.set(repositoryId, {
+        facts: {
+          stars: latest?.stars ?? asNumber(features.stars),
+          forks: latest?.forks ?? asNumber(features.forks),
+          openIssues: latest?.openIssues ?? asNumber(features.openIssues),
+          subscribers: latest?.subscribers ?? asNumber(features.subscribers),
+          license: latest?.licenseSpdx ?? null,
+          topics: Array.isArray(latest?.topics) ? latest.topics.filter((topic): topic is string => typeof topic === 'string') : [],
+          ageDays: asNumber(features.ageDays),
+          pushedDaysAgo: asNumber(features.pushedDaysAgo),
+        },
+        growth: {
+          stars24h: asNumber(features.delta24h),
+          stars7d: asNumber(features.delta7d),
+          forkRate: asNumber(features.forkRate),
+        },
+        ranking: {
+          bestRank: asNumber(features.bestRank),
+          sources: [...new Set(rankings.filter((ranking) => ranking.repositoryId === repositoryId).map((ranking) => ranking.source))],
+        },
+        history: own.map((snapshot) => ({ date: snapshot.capturedAt.toISOString().slice(0, 10), stars: snapshot.stars, forks: snapshot.forks })),
+      })
+    }
+    return result
+  }
+}
+
+const HISTORY_DAYS = 14
+
+interface RecommendationDetail {
+  facts: {
+    stars: number | null; forks: number | null; openIssues: number | null; subscribers: number | null
+    license: string | null; topics: string[]; ageDays: number | null; pushedDaysAgo: number | null
+  }
+  growth: { stars24h: number | null; stars7d: number | null; forkRate: number | null }
+  ranking: { bestRank: number | null; sources: string[] }
+  history: Array<{ date: string; stars: number; forks: number }>
+}
+
+const EMPTY_DETAIL: RecommendationDetail = {
+  facts: { stars: null, forks: null, openIssues: null, subscribers: null, license: null, topics: [], ageDays: null, pushedDaysAgo: null },
+  growth: { stars24h: null, stars7d: null, forkRate: null },
+  ranking: { bestRank: null, sources: [] },
+  history: [],
+}
+
+function asRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : {}
+}
+
+function asNumber(value: unknown): number | null {
+  return typeof value === 'number' && Number.isFinite(value) ? value : null
 }
 
 function toBeijingDate(now: Date): Date {

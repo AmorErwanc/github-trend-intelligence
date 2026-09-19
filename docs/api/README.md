@@ -78,6 +78,18 @@ curl -H 'X-API-Token: <API_TOKEN>' \
 - 同一北京时间自然日重复调用返回同一批，避免任务重跑造成重复推荐。
 - 当最近一轮采集剩余的未推荐仓库不足 10 个时，`exhausted=true`，不从陈旧历史库存补冷门项目。
 
+每个仓库除名称、地址、简介、语言、类型和三项评分外，还带写日报需要、但仓库里查不到的信息，调用方不必再逐个请求证据包：
+
+| 字段 | 内容 |
+|---|---|
+| `createdAt` / `pushedAt` | 仓库创建时间、最近一次推送时间 |
+| `facts` | `stars`、`forks`、`openIssues`、`subscribers`、`license`、`topics`、`ageDays`（创建至评分时的天数）、`pushedDaysAgo` |
+| `growth` | `stars24h`、`stars7d`（近 24 小时 / 7 天 Star 增量）、`forkRate`（Fork 与 Star 之比） |
+| `ranking` | `bestRank`（候选榜单最佳名次）、`sources`（被哪些发现渠道收录） |
+| `history` | 近 14 天逐日走势，新的在前：`date`、`stars`、`forks` |
+
+这些信息全部取自评分时刻及之前的数据，同一批次重复调用结果不变。数据缺失时数值为 `null`、列表为空，不影响其余字段。
+
 ```bash
 curl -X POST \
   -H 'X-API-Token: <API_TOKEN>' \
